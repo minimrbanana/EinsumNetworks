@@ -184,7 +184,7 @@ from torch.optim.lr_scheduler import StepLR
 
 efficient_transformer = Linformer(
     dim=128,
-    seq_len=49+1,  # 7x7 patches + 1 cls-token
+    seq_len=16+1,  # 7x7 patches + 1 cls-token
     depth=12,
     heads=8,
     k=64
@@ -193,7 +193,7 @@ efficient_transformer = Linformer(
 att_model = ViT(
     dim=128,
     image_size=28,
-    patch_size=4,
+    patch_size=7,
     num_classes=10,
     transformer=efficient_transformer,
     channels=1,
@@ -202,11 +202,11 @@ att_model = ViT(
 # loss function
 criterion = nn.CrossEntropyLoss()
 # optimizer
-optimizer = optim.Adam(att_model.parameters(), lr=0.001)
+optimizer = optim.Adam(att_model.parameters(), lr=0.01)
 # scheduler
 scheduler = StepLR(optimizer, step_size=1, gamma=0.7)
 
-for epoch in range(5):
+for epoch in range(20):
     epoch_loss = 0
     epoch_accuracy = 0
 
@@ -214,11 +214,14 @@ for epoch in range(5):
     for idx in idx_batches:
         data = train_x[idx, :].reshape(-1, 1,28,28)
         label = train_labels[idx]
+        #print(label)
     #for data, label in tqdm(train_loader):
         #data = data.to(device)
         #label = label.to(device)
 
         output = att_model(data)
+        #print(output)
+        
         loss = criterion(output, label)
 
         optimizer.zero_grad()
@@ -226,8 +229,16 @@ for epoch in range(5):
         optimizer.step()
 
         acc = (output.argmax(dim=1) == label).float().mean()
-        epoch_accuracy += acc / train_N#len(train_loader)
-        epoch_loss += loss / train_N#len(train_loader)
+        epoch_accuracy += acc / len(idx_batches)
+        epoch_loss += loss / len(idx_batches)
+    
+    #print(label)
+    #print(output)
+    #print(output.argmax(dim=1))
+    #print(label)
+    #print(acc)
+    #0/0
+
 
     with torch.no_grad():
         epoch_val_accuracy = 0
@@ -245,13 +256,16 @@ for epoch in range(5):
             val_loss = criterion(val_output, label)
 
             acc = (val_output.argmax(dim=1) == label).float().mean()
-            epoch_val_accuracy += acc / train_N#len(valid_loader)
-            epoch_val_loss += val_loss / train_N#len(valid_loader)
+            epoch_val_accuracy += acc / len(idx_batches)
+            epoch_val_loss += val_loss / len(idx_batches)
     print(
         f"Epoch : {epoch+1} - loss : {epoch_loss:.4f} - acc: {epoch_accuracy:.4f} - val_loss : {epoch_val_loss:.4f} - val_acc: {epoch_val_accuracy:.4f}\n"
         )
 
 
+print(label)
+print(val_output.argmax(dim=1))
+print(acc)
 
 
 
